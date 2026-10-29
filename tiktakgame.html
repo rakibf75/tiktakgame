@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rakib 75</title>
+    <style>
+        :root {
+            --primary-color: #6366f1;
+            --secondary-color: #ec4899;
+            --background: #1e293b;
+            --text-color: #f8fafc;
+            --grid-color: #334155;
+            --accent-color: #22d3ee;
+        }
+        
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--background);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        h1 {
+            color: var(--text-color);
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.5rem;
+            text-shadow: 0 0 10px var(--accent-color);
+        }
+        
+        .game-container {
+            max-width: 500px;
+            width: 100%;
+            padding: 20px;
+        }
+        
+        .game-mode {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .mode-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            background-color: var(--grid-color);
+            color: var(--text-color);
+        }
+        
+        .mode-btn.active {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            box-shadow: 0 0 15px rgba(236, 72, 153, 0.5);
+            transform: scale(1.05);
+        }
+        
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-gap: 10px;
+            margin: 0 auto;
+            max-width: 350px;
+        }
+        
+        .cell {
+            aspect-ratio: 1;
+            background-color: var(--grid-color);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .cell:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .cell.x {
+            color: var(--primary-color);
+            text-shadow: 0 0 10px rgba(99, 102, 241, 0.7);
+        }
+        
+        .cell.o {
+            color: var(--secondary-color);
+            text-shadow: 0 0 10px rgba(236, 72, 153, 0.7);
+        }
+        
+        .status {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 1.5rem;
+            height: 2rem;
+            color: var(--accent-color);
+        }
+        
+        .reset-btn {
+            display: block;
+            margin: 20px auto 0;
+            padding: 10px 25px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: var(--text-color);
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .reset-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(236, 72, 153, 0.5);
+        }
+        
+        .win-animation {
+            animation: pulse 1s infinite alternate;
+        }
+        
+        @keyframes pulse {
+            from {
+                transform: scale(1);
+                opacity: 1;
+            }
+            to {
+                transform: scale(1.1);
+                opacity: 0.8;
+            }
+        }
+        
+        @media (max-width: 500px) {
+            .game-container {
+                padding: 10px;
+            }
+            .board {
+                max-width: 300px;
+            }
+            .cell {
+                font-size: 2.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>Rakib Tik tak Game</h1>
+        
+        <div class="game-mode">
+            <button class="mode-btn active" id="two-player">2 Players</button>
+            <button class="mode-btn" id="computer">vs Computer</button>
+        </div>
+        
+        <div class="board" id="board">
+            <div class="cell" data-index="0"></div>
+            <div class="cell" data-index="1"></div>
+            <div class="cell" data-index="2"></div>
+            <div class="cell" data-index="3"></div>
+            <div class="cell" data-index="4"></div>
+            <div class="cell" data-index="5"></div>
+            <div class="cell" data-index="6"></div>
+            <div class="cell" data-index="7"></div>
+            <div class="cell" data-index="8"></div>
+        </div>
+        
+        <div class="status" id="status">X's turn</div>
+        
+        <button class="reset-btn" id="reset">Reset Game</button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const board = document.getElementById('board');
+            const cells = document.querySelectorAll('.cell');
+            const status = document.getElementById('status');
+            const resetBtn = document.getElementById('reset');
+            const twoPlayerBtn = document.getElementById('two-player');
+            const computerBtn = document.getElementById('computer');
+            
+            let currentPlayer = 'X';
+            let gameBoard = Array(9).fill('');
+            let isGameActive = true;
+            let isComputerMode = false;
+            
+            // Initialize the game
+            function initGame() {
+                gameBoard = Array(9).fill('');
+                isGameActive = true;
+                currentPlayer = 'X';
+                
+                cells.forEach(cell => {
+                    cell.textContent = '';
+                    cell.classList.remove('x', 'o', 'win-animation');
+                });
+                
+                updateStatus();
+            }
+            
+            // Update the game status message
+            function updateStatus() {
+                if (isGameActive) {
+                    status.textContent = `${currentPlayer}'s turn`;
+                }
+            }
+            
+            // Check if there's a winner
+            function checkWinner() {
+                const winPatterns = [
+                    [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
+                    [0, 3, 6], [1, 4, 7], [2, 5, 8], // Columns
+                    [0, 4, 8], [2, 4, 6]             // Diagonals
+                ];
+                
+                for (const pattern of winPatterns) {
+                    const [a, b, c] = pattern;
+                    
+                    if (gameBoard[a] && gameBoard[a] === gameBoard[b] && gameBoard[a] === gameBoard[c]) {
+                        isGameActive = false;
+                        status.textContent = `${gameBoard[a]} wins!`;
+                        
+                        // Highlight the winning cells
+                        pattern.forEach(index => {
+                            cells[index].classList.add('win-animation');
+                        });
+                        
+                        return true;
+                    }
+                }
+                
+                // Check for a draw
+                if (!gameBoard.includes('')) {
+                    isGameActive = false;
+                    status.textContent = 'Game ended in a draw!';
+                    return true;
+                }
+                
+                return false;
+            }
+            
+            // Handle cell click
+            function handleCellClick(index) {
+                // If cell is already filled or game is not active, return
+                if (gameBoard[index] !== '' || !isGameActive) {
+                    return;
+                }
+                
+                // Update the game board
+                gameBoard[index] = currentPlayer;
+                cells[index].textContent = currentPlayer;
+                cells[index].classList.add(currentPlayer.toLowerCase());
+                
+                // Check for a winner
+                if (!checkWinner()) {
+                    // Switch player
+                    currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+                    updateStatus();
+                    
+                    // If it's computer's turn
+                    if (isComputerMode && currentPlayer === 'O' && isGameActive) {
+                        setTimeout(() => {
+                            makeComputerMove();
+                        }, 500);
+                    }
+                }
+            }
+            
+            // Computer's move
+            function makeComputerMove() {
+                // Find empty cells
+                const emptyCells = gameBoard
+                    .map((cell, index) => cell === '' ? index : null)
+                    .filter(index => index !== null);
+                
+                if (emptyCells.length === 0 || !isGameActive) {
+                    return;
+                }
+                
+                // Try to win
+                for (const index of emptyCells) {
+                    const boardCopy = [...gameBoard];
+                    boardCopy[index] = 'O';
+                    if (checkWinningMove(boardCopy, 'O')) {
+                        handleCellClick(index);
+                        return;
+                    }
+                }
+                
+                // Block player's winning move
+                for (const index of emptyCells) {
+                    const boardCopy = [...gameBoard];
+                    boardCopy[index] = 'X';
+                    if (checkWinningMove(boardCopy, 'X')) {
+                        handleCellClick(index);
+                        return;
+                    }
+                }
+                
+                // Try to take the center
+                if (emptyCells.includes(4)) {
+                    handleCellClick(4);
+                    return;
+                }
+                
+                // Try to take corners
+                const corners = [0, 2, 6, 8].filter(corner => emptyCells.includes(corner));
+                if (corners.length > 0) {
+                    const randomCorner = corners[Math.floor(Math.random() * corners.length)];
+                    handleCellClick(randomCorner);
+                    return;
+                }
+                
+                // Take any available edge
+                const edges = [1, 3, 5, 7].filter(edge => emptyCells.includes(edge));
+                if (edges.length > 0) {
+                    const randomEdge = edges[Math.floor(Math.random() * edges.length)];
+                    handleCellClick(randomEdge);
+                    return;
+                }
+                
+                // Fallback to random move (should never reach here)
+                const randomIndex = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+                handleCellClick(randomIndex);
+            }
+            
+            // Check if a move would result in a win
+            function checkWinningMove(board, player) {
+                const winPatterns = [
+                    [0, 1, 2], [3, 4, 5], [6, 7, 8],
+                    [0, 3, 6], [1, 4, 7], [2, 5, 8],
+                    [0, 4, 8], [2, 4, 6]
+                ];
+                
+                for (const pattern of winPatterns) {
+                    const [a, b, c] = pattern;
+                    if (board[a] === player && board[b] === player && board[c] === player) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+            
+            // Add event listeners to cells
+            cells.forEach(cell => {
+                cell.addEventListener('click', () => {
+                    const index = parseInt(cell.getAttribute('data-index'));
+                    handleCellClick(index);
+                });
+            });
+            
+            // Reset button
+            resetBtn.addEventListener('click', initGame);
+            
+            // Game mode toggle
+            twoPlayerBtn.addEventListener('click', () => {
+                if (isComputerMode) {
+                    isComputerMode = false;
+                    twoPlayerBtn.classList.add('active');
+                    computerBtn.classList.remove('active');
+                    initGame();
+                }
+            });
+            
+            computerBtn.addEventListener('click', () => {
+                if (!isComputerMode) {
+                    isComputerMode = true;
+                    computerBtn.classList.add('active');
+                    twoPlayerBtn.classList.remove('active');
+                    initGame();
+                }
+            });
+            
+            // Initialize the game
+            initGame();
+        });
+    </script>
+</body>
+</html>
